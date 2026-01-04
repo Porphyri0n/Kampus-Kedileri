@@ -30,7 +30,7 @@ import {
 } from 'firebase/storage';
 import { User, UserRole, Cat, CatStatus, MapMarker, NewsItem, FeedingLog } from '../types';
 
-const ADMIN_EMAIL = 'eb.baser@gmail.com';
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
 
 export const ApiService = {
   // Auth

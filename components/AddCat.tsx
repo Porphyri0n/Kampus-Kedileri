@@ -16,6 +16,7 @@ export const AddCat: React.FC<AddCatProps> = ({ onSuccess }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,16 +43,23 @@ export const AddCat: React.FC<AddCatProps> = ({ onSuccess }) => {
 
       setSubmitting(false);
       onSuccess();
-      alert('Kedi başvurusu alındı! Yönetici onayından sonra yayınlanacaktır.');
+      setToast({ message: 'Kedi başvurusu alındı! Yönetici onayından sonra yayınlanacaktır.', type: 'success' });
+      setTimeout(() => setToast(null), 3000);
     } catch (error: any) {
       console.error(error);
-      alert(error.message || 'Kedi eklenirken bir hata oluştu.');
+      setToast({ message: error.message || 'Kedi eklenirken bir hata oluştu.', type: 'error' });
       setSubmitting(false);
+      setTimeout(() => setToast(null), 5000);
     }
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 relative">
+      {toast && (
+        <div className={`absolute top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white ${toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
+          {toast.message}
+        </div>
+      )}
       <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-6">Yeni Kedi Ekle</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
