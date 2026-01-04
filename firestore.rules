@@ -1,11 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      // Herkes okuyabilir ve yeni veri ekleyebilir
-      allow read, create: if true;
+    
+    // 1. Kullanıcı Profilleri: Herkes görebilir, ama kişi sadece kendini düzenleyebilir
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 2. Kediler, İşaretler ve Haberler
+    match /{collection}/{document=**} {
+      // Herkes okuyabilir (Listeyi görebilir)
+      allow read: if true;
       
-      // Ama kimse var olanı değiştiremez veya silemez
+      // Sadece GİRİŞ YAPMIŞ kullanıcılar yeni veri ekleyebilir
+      allow create: if request.auth != null;
+      
+      // Güvenlik için silme ve düzenleme şimdilik kapalı
       allow update, delete: if false;
     }
   }
