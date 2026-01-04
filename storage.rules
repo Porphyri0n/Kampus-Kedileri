@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // 1. Herkes resimleri görebilir (İndirebilir)
+      allow read: if true;
+
+      // 2. Yükleme Kuralları:
+      allow create: if request.resource.contentType.matches('image/.*') // Sadece resim dosyası
+                    && request.resource.size < 5 * 1024 * 1024; // Maksimum 5 MB
+
+      // 3. Silme ve Değiştirme yasak (Güvenlik için)
+      allow delete, update: if false;
+    }
+  }
+}

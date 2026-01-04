@@ -1,0 +1,41 @@
+# --- LOGS (Hata Kayıtları) ---
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# --- DEPENDENCIES (Kütüphaneler - ASLA Yüklenmez) ---
+node_modules
+
+# --- BUILD (Derleme Çıktıları) ---
+dist
+dist-ssr
+
+# --- ENVIRONMENT & SECRETS (Şifreler - ÇOK ÖNEMLİ) ---
+.env
+.env.local
+.env.*.local
+*.local
+
+# --- IDE & OS FILES (Gereksiz Editör Dosyaları) ---
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- FIREBASE (Önbellek ve Debug Dosyaları) ---
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+
+# --- GEREKSİZ/HATALI DOSYALAR ---
+apphosting.yaml

@@ -1,0 +1,12 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      // Herkes okuyabilir ve yeni veri ekleyebilir
+      allow read, create: if true;
+      
+      // Ama kimse var olanı değiştiremez veya silemez
+      allow update, delete: if false;
+    }
+  }
+}

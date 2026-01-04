@@ -1,0 +1,7 @@
+{
+  "name": "THKÜ Kampüs Kedileri",
+  "description": "Türk Hava Kurumu Üniversitesi kampüs kedileri takip ve sosyal sorumluluk platformu.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
