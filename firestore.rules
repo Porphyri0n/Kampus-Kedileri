@@ -5,8 +5,12 @@ service cloud.firestore {
     // --- YARDIMCI FONKSİYONLAR ---
     
     // 1. Admin Kontrolü (api.ts içindeki email ile aynı olmalı)
+    // 1. Admin Kontrolü (Hardcoded email veya Firestore role)
     function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'eb.baser@gmail.com';
+      return request.auth != null && (
+        request.auth.token.email == 'eb.baser@gmail.com' || 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN'
+      );
     }
 
     // 2. Giriş Yapmış mı?
@@ -51,6 +55,12 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isAuth(); // Herkes işaret ekleyebilir
       allow update, delete: if isAdmin(); // Sadece admin silebilir
+    }
+
+    // Ayarlar (Sadece Admin değiştirebilir, herkes okuyabilir)
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }

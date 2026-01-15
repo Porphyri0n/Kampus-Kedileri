@@ -157,6 +157,54 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user }) => {
           </button>
         </div>
       </div>
+      {/* System Settings */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-slate-100">Sistem Ayarları</h3>
+        <SettingsForm />
+      </div>
+    </div>
+  );
+};
+
+const SettingsForm = () => {
+  const [duration, setDuration] = useState(24);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    ApiService.getSettings().then(s => setDuration(s.foodMarkerDurationHours));
+  }, []);
+
+  const handleSave = async () => {
+    setLoading(true);
+    await ApiService.updateSettings({ foodMarkerDurationHours: duration });
+    setLoading(false);
+    alert('Ayarlar kaydedildi.');
+  };
+
+  return (
+    <div className="flex items-end space-x-4">
+      <div className="flex-1 max-w-xs">
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+          Mama Bildirimi Süresi (Saat)
+        </label>
+        <input
+          type="number"
+          min="1"
+          value={duration}
+          onChange={(e) => setDuration(parseInt(e.target.value))}
+          className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded p-2"
+        />
+        <p className="text-xs text-slate-500 mt-1">
+          Bu süreden eski mama bildirimleri haritada görünmeyecektir.
+        </p>
+      </div>
+      <button
+        onClick={handleSave}
+        disabled={loading}
+        className="bg-slate-900 dark:bg-slate-700 text-white px-4 py-2 rounded hover:bg-slate-800 disabled:opacity-50"
+      >
+        {loading ? 'Kaydediliyor...' : 'Kaydet'}
+      </button>
     </div>
   );
 };

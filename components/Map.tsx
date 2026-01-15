@@ -19,21 +19,51 @@ export const Map: React.FC<MapProps> = ({ user }) => {
   const [newMarkerType, setNewMarkerType] = useState<'CAT' | 'FOOD'>('CAT');
   const [selectedCatId, setSelectedCatId] = useState('');
   const [markerDescription, setMarkerDescription] = useState('');
+  // Food Details
+  const [foodAmount, setFoodAmount] = useState<string>('');
+  const [foodType, setFoodType] = useState<'DRY' | 'WET'>('DRY');
+
+  // Marker Detail Popup
+  const [viewingMarker, setViewingMarker] = useState<MapMarker | null>(null);
 
   useEffect(() => {
     loadData();
     // Simulate live updates
-    const interval = setInterval(loadData, 10000);
+    const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
-    const [m, c] = await Promise.all([
-      ApiService.getMarkers(),
-      ApiService.getCats()
-    ]);
-    setMarkers(m);
-    setCats(c.filter(cat => cat.isApproved));
+    try {
+      const settings = await ApiService.getSettings().catch(err => {
+        console.error("Ayarlar yüklenemedi (Settings load failed):", err);
+        return { foodMarkerDurationHours: 24 };
+      });
+
+      const allMarkers = await ApiService.getMarkers().catch(err => {
+        console.error("İşaretler yüklenemedi (Markers load failed):", err);
+        return [];
+      });
+
+      const c = await ApiService.getCats().catch(err => {
+        console.error("Kediler yüklenemedi (Cats load failed):", err);
+        return [];
+      });
+
+      // Filter markers based on TTL
+      const now = Date.now();
+      const maxAgeMs = (settings.foodMarkerDurationHours || 24) * 60 * 60 * 1000;
+
+      const activeMarkers = allMarkers.filter(m => {
+        if (m.type === 'CAT') return true;
+        return (now - m.timestamp) < maxAgeMs;
+      });
+
+      setMarkers(activeMarkers);
+      setCats(c.filter(cat => cat.isApproved));
+    } catch (error) {
+      console.error("Harita verileri yüklenirken genel hata:", error);
+    }
   };
 
   const handleMapClick = (e: React.MouseEvent) => {
@@ -43,6 +73,7 @@ export const Map: React.FC<MapProps> = ({ user }) => {
     const y = ((e.clientY - rect.top) / rect.height) * 100;
 
     setSelectedPoint({ x, y });
+    setViewingMarker(null); // Close viewing if opening new
     setShowModal(true);
   };
 
@@ -53,15 +84,20 @@ export const Map: React.FC<MapProps> = ({ user }) => {
       type: newMarkerType,
       x: selectedPoint.x,
       y: selectedPoint.y,
-      relatedId: newMarkerType === 'CAT' ? selectedCatId : undefined,
+      ...(newMarkerType === 'CAT' ? { relatedId: selectedCatId } : {}),
       description: markerDescription,
-      status: 'FULL'
+      status: 'FULL',
+      ...(newMarkerType === 'FOOD' ? {
+        amount: parseInt(foodAmount) || 0,
+        foodType: foodType
+      } : {})
     });
 
     setShowModal(false);
     setSelectedPoint(null);
     setMarkerDescription('');
     setSelectedCatId('');
+    setFoodAmount('');
     loadData();
   };
 
@@ -106,9 +142,13 @@ export const Map: React.FC<MapProps> = ({ user }) => {
             return (
               <div
                 key={marker.id}
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 group/marker hover:z-10"
+                className="absolute transform -translate-x-1/2 -translate-y-1/2 group/marker hover:z-10 cursor-pointer"
                 style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
-                onClick={(e) => { e.stopPropagation(); alert(isCat ? `Kedi: ${catInfo?.name || 'Bilinmiyor'}` : `Mama Noktası: ${marker.description}`); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setViewingMarker(marker);
+                  setShowModal(false); // Close add modal if open
+                }}
               >
                 <div className={`
                    relative flex items-center justify-center w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 shadow-md transition-transform hover:scale-125
@@ -119,11 +159,6 @@ export const Map: React.FC<MapProps> = ({ user }) => {
                   ) : (
                     <div className="w-3 h-3 bg-white rounded-sm" />
                   )}
-
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full mb-2 hidden group-hover/marker:block whitespace-nowrap bg-slate-800 dark:bg-slate-700 text-white text-xs px-2 py-1 rounded">
-                    {isCat ? (catInfo?.name || 'Bilinmiyor') : 'Mama Noktası'}
-                  </div>
                 </div>
               </div>
             );
@@ -135,13 +170,60 @@ export const Map: React.FC<MapProps> = ({ user }) => {
               style={{ left: `${selectedPoint.x}%`, top: `${selectedPoint.y}%`, transform: 'translate(-50%, -50%)' }}
             />
           )}
+
+          {/* Marker Detail Popup */}
+          {viewingMarker && (
+            <div
+              className="absolute z-20 bg-white dark:bg-slate-800 p-4 rounded-lg shadow-xl w-64 border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-200"
+              style={{
+                left: `${Math.min(Math.max(viewingMarker.x, 10), 90)}%`,
+                top: `${Math.min(Math.max(viewingMarker.y, 20), 80)}%`, // Prevent going off screen
+                transform: 'translate(-50%, -100%) translateY(-12px)'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button onClick={(e) => { e.stopPropagation(); setViewingMarker(null); }} className="absolute top-2 right-2 text-slate-400 hover:text-slate-600"><X size={14} /></button>
+
+              {viewingMarker.type === 'CAT' ? (
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-white mb-1">
+                    {cats.find(c => c.id === viewingMarker.relatedId)?.name || 'Bilinmeyen Kedi'}
+                  </h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    {cats.find(c => c.id === viewingMarker.relatedId)?.description || 'Kedi görüldü.'}
+                  </p>
+                  <div className="text-xs text-slate-400 mt-2">
+                    {new Date(viewingMarker.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="bg-yellow-100 text-yellow-700 p-1 rounded-full"><MapPin size={14} /></div>
+                    <h3 className="font-bold text-slate-900 dark:text-white">Mama Bırakıldı</h3>
+                  </div>
+                  {viewingMarker.amount && (
+                    <div className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-1">
+                      {viewingMarker.amount}g • {viewingMarker.foodType === 'WET' ? 'Yaş Mama' : 'Kuru Mama'}
+                    </div>
+                  )}
+                  <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+                    "{viewingMarker.description || 'Açıklama yok'}"
+                  </p>
+                  <div className="text-xs text-slate-400 border-t pt-2 dark:border-slate-700">
+                    Bırakılma Zamanı: {new Date(viewingMarker.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Add Marker Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-sm p-6">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg text-slate-900 dark:text-white">Konum Bildir</h3>
               <button onClick={() => setShowModal(false)}><X className="text-slate-400" /></button>
@@ -150,12 +232,14 @@ export const Map: React.FC<MapProps> = ({ user }) => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2">
                 <button
+                  type="button"
                   onClick={() => setNewMarkerType('CAT')}
                   className={`p-3 rounded-lg border text-center ${newMarkerType === 'CAT' ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400' : 'border-slate-200 dark:border-slate-600 dark:text-slate-300'}`}
                 >
                   🐱 Kedi Gördüm
                 </button>
                 <button
+                  type="button"
                   onClick={() => setNewMarkerType('FOOD')}
                   className={`p-3 rounded-lg border text-center ${newMarkerType === 'FOOD' ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400' : 'border-slate-200 dark:border-slate-600 dark:text-slate-300'}`}
                 >
@@ -177,19 +261,47 @@ export const Map: React.FC<MapProps> = ({ user }) => {
                   </select>
                 </div>
               ) : (
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Açıklama / Miktar</label>
-                  <input
-                    type="text"
-                    value={markerDescription}
-                    onChange={(e) => setMarkerDescription(e.target.value)}
-                    placeholder="Örn: 500g mama bırakıldı"
-                    className="w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg"
-                  />
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Miktar (gr)</label>
+                      <input
+                        type="number"
+                        value={foodAmount}
+                        onChange={(e) => setFoodAmount(e.target.value)}
+                        placeholder="100"
+                        className="w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Türü</label>
+                      <select
+                        value={foodType}
+                        onChange={(e) => setFoodType(e.target.value as any)}
+                        className="w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg"
+                      >
+                        <option value="DRY">Kuru Mama</option>
+                        <option value="WET">Yaş Mama</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Açıklama (Max 50)</label>
+                    <input
+                      type="text"
+                      maxLength={50}
+                      value={markerDescription}
+                      onChange={(e) => setMarkerDescription(e.target.value)}
+                      placeholder="Örn: Kapınin yanına bıraktım"
+                      className="w-full p-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg"
+                    />
+                    <div className="text-right text-xs text-slate-400 mt-1">{markerDescription.length}/50</div>
+                  </div>
                 </div>
               )}
 
               <button
+                type="button"
                 onClick={handleSubmitMarker}
                 className="w-full bg-slate-900 dark:bg-amber-600 text-white py-3 rounded-lg font-medium hover:bg-slate-800 dark:hover:bg-amber-700"
               >

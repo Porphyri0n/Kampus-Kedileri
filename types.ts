@@ -67,7 +67,9 @@ export interface MapMarker {
   relatedId?: string; // If CAT, id of cat
   status?: 'FULL' | 'EMPTY'; // For food
   timestamp: number;
-  description?: string;
+  description: string;
+  foodType?: 'DRY' | 'WET';
+  amount?: number;
 }
 
 export interface NewsItem {
@@ -76,4 +78,9 @@ export interface NewsItem {
   content: string;
   date: number;
   imageUrl?: string;
+}
+
+export interface SystemSettings {
+  id?: string;
+  foodMarkerDurationHours: number;
 }

@@ -28,7 +28,7 @@ import {
   uploadBytes,
   getDownloadURL
 } from 'firebase/storage';
-import { User, UserRole, Cat, CatStatus, MapMarker, NewsItem, FeedingLog } from '../types';
+import { User, UserRole, Cat, CatStatus, MapMarker, NewsItem, FeedingLog, SystemSettings } from '../types';
 
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
 
@@ -235,6 +235,20 @@ export const ApiService = {
   },
 
   // Settings & Map
+  getSettings: async (): Promise<SystemSettings> => {
+    const docRef = doc(db, 'settings', 'general');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      return snap.data() as SystemSettings;
+    }
+    // Default settings
+    return { foodMarkerDurationHours: 24 };
+  },
+
+  updateSettings: async (settings: Partial<SystemSettings>): Promise<void> => {
+    const docRef = doc(db, 'settings', 'general');
+    await setDoc(docRef, settings, { merge: true });
+  },
 
 
   // News
