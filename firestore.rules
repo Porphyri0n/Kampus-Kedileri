@@ -2,22 +2,55 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // 1. Kullanıcı Profilleri: Herkes görebilir, ama kişi sadece kendini düzenleyebilir
+    // --- YARDIMCI FONKSİYONLAR ---
+    
+    // 1. Admin Kontrolü (api.ts içindeki email ile aynı olmalı)
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'eb.baser@gmail.com';
+    }
+
+    // 2. Giriş Yapmış mı?
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // --- KURALLAR ---
+
+    // Kullanıcılar (Herkes kendini düzenleyebilir)
     match /users/{userId} {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // 2. Kediler, İşaretler ve Haberler
-    match /{collection}/{document=**} {
-      // Herkes okuyabilir (Listeyi görebilir)
+    // Kediler Koleksiyonu
+    match /cats/{catId} {
+      // Herkes görebilir
       allow read: if true;
       
-      // Sadece GİRİŞ YAPMIŞ kullanıcılar yeni veri ekleyebilir
-      allow create: if request.auth != null;
+      // Giriş yapan herkes kedi ekleyebilir
+      allow create: if isAuth();
       
-      // Güvenlik için silme ve düzenleme şimdilik kapalı
-      allow update, delete: if false;
+      // SİLME: Sadece Admin silebilir
+      allow delete: if isAdmin();
+      
+      // GÜNCELLEME (Onaylama, Oy Verme, Besleme):
+      // Admin ise her şeyi güncelleyebilir.
+      // Normal kullanıcı ise 'isApproved' (Onay) durumunu değiştiremez, sadece diğer alanları (oy, besleme) günceller.
+      allow update: if isAdmin() 
+                    || (isAuth() && request.resource.data.isApproved == resource.data.isApproved);
+    }
+    
+    // Haberler (Sadece Admin ekleyip silebilir)
+    match /news/{newsId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Harita İşaretleri
+    match /markers/{markerId} {
+      allow read: if true;
+      allow create: if isAuth(); // Herkes işaret ekleyebilir
+      allow update, delete: if isAdmin(); // Sadece admin silebilir
     }
   }
 }
