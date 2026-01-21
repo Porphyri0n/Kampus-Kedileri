@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Cat, User, CatStatus, CampusZone } from '../types';
+import { Cat, User, CatStatus, CampusZone, LocationLog } from '../types';
 import { ApiService } from '../services/api';
 import { ArrowLeft, MapPin, Heart, Utensils, Info, CheckCircle } from 'lucide-react';
 
@@ -8,9 +8,10 @@ interface CatDetailProps {
     user: User;
     onBack: () => void;
     onUpdate: () => void; // Trigger parent refresh
+    onLocationClick: (log: LocationLog) => void;
 }
 
-export const CatDetail: React.FC<CatDetailProps> = ({ cat, user, onBack, onUpdate }) => {
+export const CatDetail: React.FC<CatDetailProps> = ({ cat, user, onBack, onUpdate, onLocationClick }) => {
     const [feedingAmount, setFeedingAmount] = useState(250);
     const [logging, setLogging] = useState(false);
     const [suggestName, setSuggestName] = useState('');
@@ -122,8 +123,8 @@ export const CatDetail: React.FC<CatDetailProps> = ({ cat, user, onBack, onUpdat
                                         onClick={() => handleVote(name)}
                                         disabled={voting || hasVoted}
                                         className={`text-xs px-3 py-1 rounded font-medium transition-colors ${hasVoted
-                                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500'
-                                                : 'bg-purple-100 dark:bg-purple-900/50 hover:bg-purple-200 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300'
+                                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500'
+                                            : 'bg-purple-100 dark:bg-purple-900/50 hover:bg-purple-200 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300'
                                             }`}
                                     >
                                         Oy Ver
@@ -186,6 +187,41 @@ export const CatDetail: React.FC<CatDetailProps> = ({ cat, user, onBack, onUpdat
                     >
                         {logging ? 'Kaydediliyor...' : 'Mama Bıraktım Kaydet'}
                     </button>
+                </div>
+
+                {/* Location Logs */}
+                <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white mb-4">Son Görülme Konumları</h3>
+                    <div className="space-y-3">
+                        {(!cat.locationLogs || cat.locationLogs.length === 0) ? (
+                            <div className="text-slate-500 dark:text-slate-400 text-sm">Henüz konum bildirimi yok.</div>
+                        ) : (
+                            cat.locationLogs.slice().reverse().slice(0, 5).map(log => (
+                                <div
+                                    key={log.id}
+                                    className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition w-full border border-slate-100 dark:border-slate-700"
+                                    onClick={() => onLocationClick(log)}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-full text-amber-600 dark:text-amber-400">
+                                            <MapPin size={16} />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                                                {log.userName} gördü
+                                            </div>
+                                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                                                {new Date(log.timestamp).toLocaleDateString()} {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="text-xs text-blue-600 dark:text-blue-400 font-medium whitespace-nowrap ml-2">
+                                        Haritada Gör
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </div>
 
                 {/* History Log */}

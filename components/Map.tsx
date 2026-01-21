@@ -21,6 +21,7 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 interface MapProps {
   user: User;
+  focusLocation?: { x: number; y: number; description?: string };
 }
 
 // Map Configuration
@@ -153,7 +154,7 @@ const CustomPopup: React.FC<CustomPopupProps> = ({ marker, catInfo, position, on
   );
 };
 
-export const Map: React.FC<MapProps> = ({ user }) => {
+export const Map: React.FC<MapProps> = ({ user, focusLocation }) => {
   // State
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [cats, setCats] = useState<Cat[]>([]);
@@ -225,18 +226,30 @@ export const Map: React.FC<MapProps> = ({ user }) => {
     return () => clearInterval(interval);
   }, []);
 
+  // Handle focus location
+  useEffect(() => {
+    if (focusLocation && mapRef.current) {
+      const coords = toMapCoords(focusLocation.x, focusLocation.y) as [number, number];
+      mapRef.current.flyTo(coords, 0, { animate: true, duration: 1.5 });
+      // Also open popup or just show marker? The red pulsating marker is enough as per plan.
+    }
+  }, [focusLocation]);
+
   const loadData = async () => {
     try {
-      const settings = await ApiService.getSettings().catch(() => ({ foodMarkerDurationHours: 24 }));
+      const settings = await ApiService.getSettings().catch(() => ({ foodMarkerDurationHours: 24, catMarkerDurationHours: 12 }));
       const allMarkers = await ApiService.getMarkers().catch(() => []);
       const c = await ApiService.getCats().catch(() => []);
 
       const now = Date.now();
-      const maxAgeMs = (settings.foodMarkerDurationHours || 24) * 60 * 60 * 1000;
+      const maxFoodAgeMs = (settings.foodMarkerDurationHours || 24) * 60 * 60 * 1000;
+      const maxCatAgeMs = (settings.catMarkerDurationHours || 12) * 60 * 60 * 1000;
 
       const activeMarkers = allMarkers.filter(m => {
-        if (m.type === 'CAT') return true;
-        return (now - m.timestamp) < maxAgeMs;
+        if (m.type === 'CAT') {
+          return (now - m.timestamp) < maxCatAgeMs;
+        }
+        return (now - m.timestamp) < maxFoodAgeMs;
       });
 
       setMarkers(activeMarkers);
@@ -361,6 +374,18 @@ export const Map: React.FC<MapProps> = ({ user }) => {
                 />
               );
             })}
+
+            {focusLocation && (
+              <Marker
+                position={toMapCoords(focusLocation.x, focusLocation.y)}
+                icon={L.divIcon({
+                  html: `<div class="w-8 h-8 bg-purple-600 rounded-full border-2 border-white shadow-lg animate-bounce flex items-center justify-center text-white"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>`,
+                  className: '',
+                  iconSize: [32, 32],
+                  iconAnchor: [16, 32]
+                })}
+              />
+            )}
 
             {/* Selected Point Indicator (Preview) */}
             {selectedPoint && (

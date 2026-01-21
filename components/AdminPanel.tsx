@@ -167,16 +167,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user }) => {
 };
 
 const SettingsForm = () => {
-  const [duration, setDuration] = useState(24);
+  const [foodDuration, setFoodDuration] = useState(24);
+  const [catDuration, setCatDuration] = useState(12);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    ApiService.getSettings().then(s => setDuration(s.foodMarkerDurationHours));
+    ApiService.getSettings().then(s => {
+      setFoodDuration(s.foodMarkerDurationHours);
+      setCatDuration(s.catMarkerDurationHours || 12);
+    });
   }, []);
 
   const handleSave = async () => {
     setLoading(true);
-    await ApiService.updateSettings({ foodMarkerDurationHours: duration });
+    await ApiService.updateSettings({
+      foodMarkerDurationHours: foodDuration,
+      catMarkerDurationHours: catDuration
+    });
     setLoading(false);
     alert('Ayarlar kaydedildi.');
   };
@@ -190,18 +197,35 @@ const SettingsForm = () => {
         <input
           type="number"
           min="1"
-          value={duration}
-          onChange={(e) => setDuration(parseInt(e.target.value))}
+          value={foodDuration}
+          onChange={(e) => setFoodDuration(parseInt(e.target.value))}
           className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded p-2"
         />
         <p className="text-xs text-slate-500 mt-1">
-          Bu süreden eski mama bildirimleri haritada görünmeyecektir.
+          Eski mama bildirimlerinin süresi.
         </p>
       </div>
+
+      <div className="flex-1 max-w-xs">
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+          Kedi Bildirimi Süresi (Saat)
+        </label>
+        <input
+          type="number"
+          min="1"
+          value={catDuration}
+          onChange={(e) => setCatDuration(parseInt(e.target.value))}
+          className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded p-2"
+        />
+        <p className="text-xs text-slate-500 mt-1">
+          Eski kedi görüldü bildirimlerinin süresi.
+        </p>
+      </div>
+
       <button
         onClick={handleSave}
         disabled={loading}
-        className="bg-slate-900 dark:bg-slate-700 text-white px-4 py-2 rounded hover:bg-slate-800 disabled:opacity-50"
+        className="bg-slate-900 dark:bg-slate-700 text-white px-4 py-2 rounded hover:bg-slate-800 disabled:opacity-50 h-[42px]"
       >
         {loading ? 'Kaydediliyor...' : 'Kaydet'}
       </button>
