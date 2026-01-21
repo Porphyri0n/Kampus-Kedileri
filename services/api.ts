@@ -28,7 +28,7 @@ import {
   uploadBytes,
   getDownloadURL
 } from 'firebase/storage';
-import { User, UserRole, Cat, CatStatus, MapMarker, NewsItem, FeedingLog, SystemSettings } from '../types';
+import { User, UserRole, Cat, CatStatus, MapMarker, NewsItem, FeedingLog, SystemSettings, LocationLog } from '../types';
 
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
 
@@ -160,6 +160,7 @@ export const ApiService = {
       imageUrl,
       createdAt: Date.now(),
       feedingLogs: [],
+      locationLogs: [],
       votes: {},
       votedUserIds: [],
       isApproved: false
@@ -231,6 +232,29 @@ export const ApiService = {
       timestamp: Date.now()
     };
     const docRef = await addDoc(collection(db, 'markers'), newMarker);
+
+    // Identifies if this is a CAT marker and adds a log to the cat document
+    if (marker.type === 'CAT' && marker.relatedId && auth.currentUser) {
+      try {
+        const catRef = doc(db, 'cats', marker.relatedId);
+        const locationLog: LocationLog = {
+          id: docRef.id,
+          userId: auth.currentUser.uid,
+          userName: auth.currentUser.displayName || auth.currentUser.email?.split('@')[0] || 'Kullanıcı',
+          timestamp: newMarker.timestamp,
+          x: marker.x,
+          y: marker.y,
+          description: marker.description
+        };
+        await updateDoc(catRef, {
+          locationLogs: arrayUnion(locationLog)
+        });
+      } catch (e) {
+        console.error("Error logging cat location:", e);
+        // Don't fail the marker creation just because log failed
+      }
+    }
+
     return { id: docRef.id, ...newMarker } as MapMarker;
   },
 
@@ -242,7 +266,7 @@ export const ApiService = {
       return snap.data() as SystemSettings;
     }
     // Default settings
-    return { foodMarkerDurationHours: 24 };
+    return { foodMarkerDurationHours: 24, catMarkerDurationHours: 12 };
   },
 
   updateSettings: async (settings: Partial<SystemSettings>): Promise<void> => {

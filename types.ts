@@ -43,6 +43,16 @@ export interface FeedingLog {
   amountGrams: number;
 }
 
+export interface LocationLog {
+  id: string;
+  userId: string;
+  userName: string;
+  timestamp: number;
+  x: number;
+  y: number;
+  description: string;
+}
+
 export interface Cat {
   id: string;
   name: string;
@@ -56,6 +66,7 @@ export interface Cat {
   votes: Record<string, number>; // Name suggestions and vote counts
   votedUserIds: string[]; // IDs of users who have voted
   feedingLogs: FeedingLog[];
+  locationLogs?: LocationLog[];
   createdAt: number;
 }
 
@@ -83,4 +94,5 @@ export interface NewsItem {
 export interface SystemSettings {
   id?: string;
   foodMarkerDurationHours: number;
+  catMarkerDurationHours: number;
 }
