@@ -12,6 +12,8 @@ vi.mock('../services/api', () => ({
     updateCat: vi.fn(),
     deleteCat: vi.fn(),
     addNews: vi.fn(),
+    getSettings: vi.fn().mockResolvedValue({ foodMarkerDurationHours: 24, catMarkerDurationHours: 12 }),
+    updateSettings: vi.fn(),
   },
 }));
 

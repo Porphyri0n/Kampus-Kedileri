@@ -111,14 +111,14 @@ export const CatDetail: React.FC<CatDetailProps> = ({ cat, user, onBack, onUpdat
                     <div className="space-y-3 mb-4">
                         {sortedNames.length > 0 ? sortedNames.map(([name, count], idx) => (
                             <div key={name} className="flex items-center justify-between bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-transparent dark:border-slate-700">
-                                <div className="flex items-center">
-                                    <span className="w-6 h-6 flex items-center justify-center bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-full mr-3">
+                                <div className="flex items-center flex-1 min-w-0 mr-2">
+                                    <span className="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs font-bold rounded-full mr-3">
                                         {idx + 1}
                                     </span>
-                                    <span className="font-medium text-slate-700 dark:text-slate-200">{name}</span>
+                                    <span className="font-medium text-slate-700 dark:text-slate-200 truncate">{name}</span>
                                 </div>
-                                <div className="flex items-center space-x-3">
-                                    <span className="text-sm text-slate-500 dark:text-slate-400">{count} oy</span>
+                                <div className="flex items-center space-x-3 flex-shrink-0">
+                                    <span className="text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">{count} oy</span>
                                     <button
                                         onClick={() => handleVote(name)}
                                         disabled={voting || hasVoted}

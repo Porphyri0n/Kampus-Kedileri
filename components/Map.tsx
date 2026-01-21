@@ -335,7 +335,7 @@ export const Map: React.FC<MapProps> = ({ user, focusLocation }) => {
         {/* Map Container */}
         <div
           ref={mapContainerRef}
-          className="relative w-full h-[600px] bg-slate-200 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-300 dark:border-slate-600 z-0"
+          className="relative w-full h-[400px] sm:h-[500px] lg:h-[600px] bg-slate-200 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-300 dark:border-slate-600 z-0"
         >
           <MapContainer
             center={[MAP_HEIGHT / 2, MAP_WIDTH / 2]}
