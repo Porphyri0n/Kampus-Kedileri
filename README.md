@@ -56,9 +56,7 @@ Platform sayesinde öğrenciler ve akademisyenler:
 - Yönetici tarafından haber/duyuru paylaşımı
 - Topluluk bildirimleri
 
-### 🌓 Tema Desteği
-- Açık/Koyu tema
-- Sistem tercihine göre otomatik tema
+
 
 ---
 
