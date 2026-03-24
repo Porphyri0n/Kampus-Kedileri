@@ -12,8 +12,8 @@ interface CatDetailProps {
 }
 
 export const CatDetail: React.FC<CatDetailProps> = ({ cat, user, onBack, onUpdate, onLocationClick }) => {
-    const [feedingAmount, setFeedingAmount] = useState(250);
     const [logging, setLogging] = useState(false);
+    const [feedingAmount, setFeedingAmount] = useState(250);
     const [suggestName, setSuggestName] = useState('');
     const [voting, setVoting] = useState(false);
 
