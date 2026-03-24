@@ -259,6 +259,8 @@ Türk Hava Kurumu Üniversitesi öğrencileri tarafından geliştirilmiştir.
 
 **🐱 Kampüsümüzdeki dostlarımız için tek yürek! 🐱**
 
-Made with ❤️ at THKÜ
+Developers:
+Erdoğan Başer - eb.baser@gmail.com
+Ziya Üre - ziyaure06@gmail.com
 
 </div>
